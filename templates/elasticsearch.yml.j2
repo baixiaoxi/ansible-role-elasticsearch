@@ -1,0 +1,42 @@
+
+{% if es_config %}
+{{ es_config | to_nice_yaml(indent=2) }}
+{% endif %}
+
+{% if es_config['cluster.name'] is not defined %}
+cluster.name: elasticsearch
+{% endif %}
+
+{% if es_config['node.name'] is not defined %}
+node.name: {{inventory_hostname}}
+{% endif %}
+
+#################################### Paths ####################################
+
+# Path to directory containing configuration (this file and logging.yml):
+path.data: {{ es_data_dirs | array_to_str }}
+path.logs: {{ es_log_dir }}
+
+{% if not oss_version and es_api_basic_auth_username is defined and es_api_basic_auth_password is defined %}
+xpack.security.enabled: true
+
+{% if es_enable_enrollment %}
+xpack.security.enrollment.enabled: true
+{% endif %}
+
+{% if es_enable_http_ssl and es_enable_auto_ssl_configuration %}
+xpack.security.http.ssl.enabled: true
+{% if es_http_ssl_keystore %}
+xpack.security.http.ssl.keystore.path: {{ es_ssl_certificate_path }}/elasticsearch/http.p12
+{% endif %}
+{% endif %}
+
+{% if es_enable_transport_ssl and es_enable_auto_ssl_configuration %}
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: {{ es_ssl_verification_mode }}
+{% if es_ssl_keystore and es_ssl_truststore %}
+xpack.security.transport.ssl.keystore.path: {{ es_ssl_certificate_path }}/{{ es_ssl_keystore | basename }}
+xpack.security.transport.ssl.truststore.path: {{ es_ssl_certificate_path }}/{{ es_ssl_truststore | basename }}
+{% endif %}
+{% endif %}
+{% endif %}
